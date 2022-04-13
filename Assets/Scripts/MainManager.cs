@@ -11,31 +11,26 @@ public class MainManager : MonoBehaviour
     public Rigidbody Ball;
 
     public Text ScoreText;
+    public Text MaxScoreText;
     public GameObject GameOverText;
     
     private bool m_Started = false;
-    private int m_Points;
+    private static int m_Points;
     
     private bool m_GameOver = false;
+    private int totalBricks;
 
     
     // Start is called before the first frame update
     void Start()
     {
-        const float step = 0.6f;
-        int perLine = Mathf.FloorToInt(4.0f / step);
-        
-        int[] pointCountArray = new [] {1,1,2,2,5,5};
-        for (int i = 0; i < LineCount; ++i)
-        {
-            for (int x = 0; x < perLine; ++x)
-            {
-                Vector3 position = new Vector3(-1.5f + step * x, 2.5f + i * 0.3f, 0);
-                var brick = Instantiate(BrickPrefab, position, Quaternion.identity);
-                brick.PointValue = pointCountArray[i];
-                brick.onDestroyed.AddListener(AddPoint);
-            }
-        }
+        MontaTela();
+
+        MaxScoreText.text = $"Best Score : {GameManagement.Instance.playerName} : {GameManagement.Instance.pontos}";
+        ScoreText.text = $"Score : {GameManagement.Instance.nameInput} : {m_Points}";
+
+        GameObject[] bricks = GameObject.FindGameObjectsWithTag("Brick");
+        totalBricks = bricks.Length;
     }
 
     private void Update()
@@ -57,20 +52,64 @@ public class MainManager : MonoBehaviour
         {
             if (Input.GetKeyDown(KeyCode.Space))
             {
+                m_Points = 0;
                 SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
             }
+        }
+
+        if(GameManagement.Instance.pontos == 0 || GameManagement.Instance.pontos < m_Points)
+        {
+            GameManagement.Instance.pontos = m_Points;
+            GameManagement.Instance.playerName = GameManagement.Instance.nameInput;
+        }
+
+        if(totalBricks == 0)
+        {
+            //MontaTela();
+            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
         }
     }
 
     void AddPoint(int point)
     {
         m_Points += point;
-        ScoreText.text = $"Score : {m_Points}";
+        ScoreText.text = $"Score : {GameManagement.Instance.nameInput} : {m_Points}";
+
+        if(GameManagement.Instance.pontos > m_Points)
+        {
+            MaxScoreText.text = $"Best Score : {GameManagement.Instance.playerName} : {GameManagement.Instance.pontos}";
+        }
+        else 
+        {
+            MaxScoreText.text = $"Best Score : {GameManagement.Instance.nameInput} : {m_Points}";
+        }
+
+        totalBricks --;
+        
     }
 
     public void GameOver()
     {
+        GameManagement.Instance.Save();
         m_GameOver = true;
         GameOverText.SetActive(true);
+    }
+
+    private void MontaTela()
+    {
+        const float step = 0.6f;
+        int perLine = Mathf.FloorToInt(4.0f / step);
+        
+        int[] pointCountArray = new [] {1,1,2,2,5,5};
+        for (int i = 0; i < LineCount; ++i)
+        {
+            for (int x = 0; x < perLine; ++x)
+            {
+                Vector3 position = new Vector3(-1.5f + step * x, 2.5f + i * 0.3f, 0);
+                var brick = Instantiate(BrickPrefab, position, Quaternion.identity);
+                brick.PointValue = pointCountArray[i];
+                brick.onDestroyed.AddListener(AddPoint);
+            }
+        }
     }
 }
